@@ -1,0 +1,129 @@
+GNU Typist reads in the data for its typing lessons from a script file. With the exception of comments and blank lines, each line in the file is of the format
+
+command_char : command_data
+
+Here, command_char is a single character code that defines an action for gtypist to take, and command_data is data for that command. If command_char is a space character, this indicates that the line is a continuation of the preceding non-space command. The ‘:’ separator must be in column two of the line.
+
+Comment lines are lines beginning with a ‘#’ character, and are ignored, as are blank lines. Comment lines may have any format provided that they begin with ‘#’; other lines must have the above format.
+
+You should read the introduction so that you are familiar with the basics: See Introduction.
+
+The following is a list of valid command_char values:
+
+B
+
+    This command clears the complete screen. If any command_data is present, it is displayed in the one-line banner at the top of the screen, and remains in place until the next B command. This command may not be continued on the following line; it is a single line command.
+
+T
+
+    This presents a tutorial, and is a multi-line command, up to the limit of the screen length. Each line in the command is simply printed to the screen. This command clears the screen beneath the top banner line. After the display is done, the program waits before proceeding.
+
+-     This indicates a label in the file. The label may be the target of a G, Y, N or F command. Labels may contain any character except space (this restriction was added in gtypist 2.9), and are a single line command. Labels must be unique within lesson files. White-space at the end of labels is ignored.
+
+  I
+
+      The I command can display some brief instructions above a drill or a speed test. Only two lines or less are permitted. Unlike the T command, it does not wait for any further key-presses before proceeding. So it should really always be followed by an exercise. It clears the whole screen exercise area, so in this respect it’s just like a two-line T.
+
+  M
+
+      This command is the new way to create menus (since gtypist 2.7). Here is the syntax:
+
+      M: [UP=RETURN_LABEL|_EXIT] "title"
+       :LABEL1 "item1"
+       :LABEL2 "item2"
+       ...
+
+      This will display a convenient menu made from the specified items and let the user to choose from them. If an item was selected, gtypist will continue script execution from the corresponding label. If the Escape key was pressed and UP label is defined, gtypist will go to the UP label likewise, or quit from, if there is ``_EXIT'' in the place of the label. If the UP label is not defined, gtypist will try to return to the previous menu and jump to the last label met in the script before previous M command. If there is no such label and some menu was displayed before the current one, gtypist will just go to the beginning of the script. If none of the previous conditions were met, gtypist will just exit from the script.
+
+      The above details make it natural to create menu hierarchies without using UP labels.
+
+      The title and all descriptions must be wrapped in quotes (""). Additionally, there must be at least one space between UP=XXX and "title" and between the labels and the corresponding descriptions.
+
+      This command was introduced as an easy way to arrange various parts of lesson files into single menu hierarchy which can be easily navigated, as well as a replacement for ancient F-key menus. See the existing lesson-files for examples.
+
+  D,d
+
+      This command is called drill, and it is one of two types of typing exercises.
+
+      It is a multi-line command. The text is displayed in every second line, and you type in the intermediate lines. Because of this, you cannot use more than 11 lines of drill content.
+
+      This type of exercise is supposed to be used for finger training (i.e. jfjfjjf), but may also contain complete words and sentences if they are used to practice something (i.e. a letter/syllable/"grip"), and aren’t real texts.
+
+      The lowercase version d is a “practice only” drill - the user will not have not repeat this drill if he/she made too many mistakes.
+
+  S,s
+
+      This is the second type of typing exercise: the speed test.
+
+      It is a multi-line command. It displays its text on the screen, and prompts the user to type on top of it. That’s why you can use up to 22 lines of text for one speed test. In a speed test you can correct your mistakes, but this will not decrease the error-count.
+
+      Speed tests should be used for typing (mostly) complete sentences, texts or files (i.e. a letter, texinfo/html/tex files).
+
+      The lowercase version s is a practice only speed test: the user will not have not repeat this drill if (s)he made too many mistakes.
+
+  G
+
+      This causes gtypist to go to the label in command_data, and continue execution of the script there. This is a single line command.
+
+  Q
+
+      This command command prompts its text on the message line, and waits for a Y or an N before proceeding. Other characters are ignored.
+
+      As a side effect, you can hit an F-key if it is bound (a deprecated way to create the prompt for menus).
+
+  Y
+
+      This is like G, except that the goto is executed only if the result of the last Q command was Y.
+
+  N
+
+      This is like G, except that the goto is executed only if the result of the last Q command was N.
+
+  K
+
+      This command is deprecated in favor of M: This binds a function key to a label. The format of the data line following this command must be fkey_number:label, where fkey_number is a function key number in the range 1 to 12, and label is a label to go to when this key is pressed. A value of NULL for label removes any label binding from the key.
+
+      If function keys are not available on the terminal other keys can be used: 1 to 9 to replace F1 to F9, 0 to replace F10, A for F11 and S for F12.
+
+      Other alternatives for the keys F1 to F12 are the combinations: Ctrl-Q, Ctrl-W, Ctrl-E, Ctrl-R, Ctrl-T, Ctrl-Z, Ctrl-U, Ctrl-I, Ctrl-O, Ctrl-P, Ctrl-A and Ctrl-S.
+
+      This is also useful where function keys are intercepted by other programs (for example by a window manager).
+
+  E
+
+      This command is used to set the highest error-rate permitted for the next drill (E:<value>%) or for all following drills until the next E: (E:<value>%*).
+
+      If --max-error/-e is specified then this command will only have an effect if it is stricter than the value specified on the command-line.
+
+      command_data consists of the value (between 0.0 and 100.0), followed by ‘%’ (this is required so that scripts are more readable). A special value of default or Default sets the error-max value back to the default.
+
+  F
+
+      This command (“set on-failure label”) is used to set the label (in command_data) where the user will have to go to if (s)he fails an exercise.
+
+      Usually, this command only applies to the next exercise, but you can make it persistent by putting a ‘*’ at the end of command_data.
+
+      If label is NULL then this resets the label.
+
+  X
+
+      This command causes gtypist to exit. It is a single line command. Any command_data is ignored. The program also exits if the end of the file is found (so you could also place a label there and just G to it)
+
+Here is a tiny example script to demonstrate the available commands (tinydemo.typ lesson file):
+
+# Minimal demonstration
+
+B: Typing tutor demonstration
+*:LOOP
+K:1:QDONE
+T:This is a small example tutor script. A better
+:example may be found in the demo.typ file that
+:accompanies GNU Typist
+I:Here is an example of a drill:
+D:asdf ghjkl;
+I:And here is an example of a speed test:
+S:qwe rt yu iop
+*:QDONE
+Q:Seen enough yet? [Y/N]
+N:LOOP
+X:
